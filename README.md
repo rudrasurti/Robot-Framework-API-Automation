@@ -13,20 +13,25 @@ It shows the approach I describe in my article [How I Automate API Testing with 
 | `auth.robot` | Valid login returns a token · invalid credentials are rejected |
 | `booking_crud.robot` | Health check · create · read · list · filter · full update (PUT) · partial update (PATCH) · delete |
 | `booking_negative.robot` | Unknown id → 404 · missing fields · update/delete without token or with an invalid token → 403 |
+| `booking_contract.robot` | Contract tests: responses validated against JSON Schemas in `schemas/` |
+| `booking_data_driven.robot` | Data-driven template: 5 booking variations (zero/large price, no deposit, Unicode names) |
 
-Tests are tagged `smoke`, `positive`, `negative` and `security`, so you can run any slice.
+Tests are tagged `smoke`, `positive`, `negative`, `security`, `contract` and `data-driven`, so you can run any slice.
 
 ## Project structure
 
 ```
 .
+├── schemas/                        # JSON Schemas for contract tests
 ├── resources/
 │   ├── variables.resource          # base URL, credentials, test data
 │   └── booking_keywords.resource   # reusable keywords (session, auth, create, verify)
 ├── tests/
 │   ├── auth.robot
 │   ├── booking_crud.robot
-│   └── booking_negative.robot
+│   ├── booking_negative.robot
+│   ├── booking_contract.robot
+│   └── booking_data_driven.robot
 ├── .github/workflows/robot-tests.yml   # CI: runs on every push + weekly
 └── requirements.txt
 ```
@@ -58,6 +63,7 @@ GitHub Actions runs the whole suite on every push, on pull requests, weekly, and
 - **Reusable keywords:** `Get Auth Token`, `Build Booking Body`, `Create Booking`, `Booking Should Match`
 - **Independent tests:** every test creates its own data, so tests can run in any order
 - **Full assertions:** every response field is checked, not just the status code
+- **Contract testing:** JSON Schema validation catches API contract drift early
 
 ---
 
