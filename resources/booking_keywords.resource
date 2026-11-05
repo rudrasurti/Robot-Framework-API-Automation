@@ -2,6 +2,7 @@
 Documentation     Reusable keywords for the Restful-booker API.
 Library           RequestsLibrary
 Library           Collections
+Library           OperatingSystem
 Resource          variables.resource
 
 *** Keywords ***
@@ -52,3 +53,10 @@ Booking Should Match
     Should Be Equal    ${actual}[depositpaid]     ${expected}[depositpaid]
     Should Be Equal    ${actual}[bookingdates][checkin]     ${expected}[bookingdates][checkin]
     Should Be Equal    ${actual}[bookingdates][checkout]    ${expected}[bookingdates][checkout]
+
+Response Should Match Schema
+    [Documentation]    Validates a JSON response body against a JSON Schema file in schemas/.
+    [Arguments]    ${body}    ${schema_file}
+    ${path}=    Normalize Path    ${CURDIR}/../schemas/${schema_file}
+    ${schema}=    Evaluate    json.load(open($path))    modules=json
+    Evaluate    jsonschema.validate(instance=$body, schema=$schema)    modules=jsonschema
