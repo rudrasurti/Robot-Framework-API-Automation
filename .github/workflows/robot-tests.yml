@@ -8,25 +8,98 @@ on:
   schedule:
     - cron: "0 3 * * 1"   # every Monday 03:00 UTC
 
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  robot:
+  lint:
+    name: Lint (Robocop)
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install robotframework-robocop
+      - name: Static analysis of tests and keywords
+        run: robocop check tests resources --exit-zero
+
+  test:
+    name: Tests (Python ${{ matrix.python }})
+    needs: lint
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python }}
+          cache: pip
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run Robot Framework tests
-        run: robot --outputdir results --loglevel INFO tests/
+      - name: Run tests in parallel (Pabot)
+        run: pabot --processes 4 --outputdir results --loglevel INFO tests/
+
+      - name: Test summary
+        if: always()
+        run: |
+          python - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          import xml.etree.ElementTree as ET
+          s = ET.parse("results/output.xml").getroot().find(".//statistics/total/stat").attrib
+          print(f"### Robot Framework results (Python ${{ matrix.python }})")
+          print(f"| Passed | Failed | Skipped |\n|---|---|---|\n| {s['pass']} | {s['fail']} | {s.get('skip','0')} |")
+          EOF
 
       - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: robot-report
+          name: robot-report-py${{ matrix.python }}
           path: results/
+
+  docker:
+    name: Tests in Docker
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t rf-api-tests .
+      - name: Run tests in container
+        run: docker run --rm -v "$PWD/results:/app/results" rf-api-tests
+
+  report:
+    name: Publish report to GitHub Pages
+    needs: test
+    if: always() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: robot-report-py3.12
+          path: site
+      - name: Make report the home page
+        run: cp site/report.html site/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
