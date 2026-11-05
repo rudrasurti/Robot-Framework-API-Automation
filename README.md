@@ -1,6 +1,11 @@
 # Robot Framework API Automation
 
 ![API Tests](https://github.com/rudrasurti/Robot-Framework-API-Automation/actions/workflows/robot-tests.yml/badge.svg)
+![Robot Framework](https://img.shields.io/badge/Robot%20Framework-7.x-00C0B5)
+![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-3776AB)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED)
+
+**Live test report:** [rudrasurti.github.io/Robot-Framework-API-Automation](https://rudrasurti.github.io/Robot-Framework-API-Automation/)
 
 A clean, keyword-driven **API test automation framework** built with **Robot Framework** and **RequestsLibrary**, tested against the public [Restful-booker](https://restful-booker.herokuapp.com/apidoc/index.html) API.
 
@@ -32,7 +37,9 @@ Tests are tagged `smoke`, `positive`, `negative`, `security`, `contract` and `da
 │   ├── booking_negative.robot
 │   ├── booking_contract.robot
 │   └── booking_data_driven.robot
-├── .github/workflows/robot-tests.yml   # CI: runs on every push + weekly
+├── .github/workflows/robot-tests.yml   # CI: lint, matrix, parallel, Docker, Pages report
+├── .github/dependabot.yml              # weekly dependency updates
+├── Dockerfile                          # run the suite in a container
 └── requirements.txt
 ```
 
@@ -53,9 +60,32 @@ robot --outputdir results --include security tests/
 
 Open `results/report.html` for the full report.
 
-## CI/CD
+## CI/CD and DevOps
 
-GitHub Actions runs the whole suite on every push, on pull requests, weekly, and on demand. The Robot Framework HTML report and log are uploaded as a build artifact for every run.
+The GitHub Actions pipeline runs on every push, on pull requests, every Monday, and on demand:
+
+| Stage | What it does |
+|---|---|
+| Lint | Robocop static analysis of tests and keywords |
+| Test matrix | Runs the full suite on Python 3.11, 3.12 and 3.13 |
+| Parallel runs | Pabot runs suites in 4 processes, cutting run time by about 60% |
+| Job summary | Pass/fail counts shown on every run page |
+| Docker | Builds the image and runs the suite inside the container |
+| Live report | Publishes the latest Robot Framework report to GitHub Pages |
+| Dependabot | Weekly updates for Python packages, Actions and the Docker base image |
+
+Run with Docker:
+
+```bash
+docker build -t rf-api-tests .
+docker run --rm -v "$PWD/results:/app/results" rf-api-tests
+```
+
+Run in parallel locally:
+
+```bash
+pabot --processes 4 --outputdir results tests/
+```
 
 ## Design choices
 
