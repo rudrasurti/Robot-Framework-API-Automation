@@ -91,12 +91,13 @@ jobs:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v8
         with:
           name: robot-report-py3.12
           path: site
-      - name: Make report the home page
-        run: cp site/report.html site/index.html
+      - name: Add landing page with link previews
+        run: cp pages/index.html site/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v5
         with:
