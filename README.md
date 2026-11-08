@@ -68,7 +68,7 @@ The GitHub Actions pipeline runs on every push, on pull requests, every Monday, 
 |---|---|
 | Lint | Robocop static analysis of tests and keywords |
 | Test matrix | Runs the full suite on Python 3.11, 3.12 and 3.13 |
-| Parallel runs | Pabot runs suites in 4 processes, cutting run time by about 60% |
+| Parallel runs | Pabot runs suites in 4 processes: 3.9 s of test time finishes in about 2.2 s (about 45% faster) |
 | Job summary | Pass/fail counts shown on every run page |
 | Docker | Builds the image and runs the suite inside the container |
 | Live report | Publishes the latest Robot Framework report to GitHub Pages |
